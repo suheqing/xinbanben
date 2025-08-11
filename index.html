@@ -6,6 +6,7 @@
   <title>安全入口验证 - 授权访问</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    /* 保持原有样式不变 */
     * {
       margin: 0;
       padding: 0;
@@ -22,7 +23,6 @@
       line-height: 1.6;
     }
     
-    /* 背景预览 - 模糊但可见 */
     .preview-background {
       position: fixed;
       top: 0;
@@ -34,10 +34,9 @@
       filter: blur(8px) brightness(0.8);
       z-index: -1;
       opacity: 0.8;
-      transform: scale(1.02); /* 轻微放大避免边缘空白 */
+      transform: scale(1.02);
     }
     
-    /* 加载动画样式 */
     .loading-container {
       width: 120px;
       height: 120px;
@@ -87,7 +86,6 @@
       font-weight: 500;
     }
     
-    /* 透明水印样式 - 始终显示 */
     .watermark {
       position: fixed;
       top: 0;
@@ -119,7 +117,7 @@
       border: 1px solid rgba(80, 90, 120, 0.3);
       margin-bottom: clamp(1rem, 3vw, 2rem);
       z-index: 10001;
-      transform: translateZ(0); /* 硬件加速 */
+      transform: translateZ(0);
     }
     
     .watermark-title {
@@ -179,7 +177,7 @@
       box-shadow: 0 5px 20px rgba(16, 190, 174, 0.3);
       cursor: pointer;
       border: none;
-      min-height: 48px; /* 确保触摸区域足够大 */
+      min-height: 48px;
       min-width: 140px;
     }
     
@@ -195,7 +193,6 @@
       box-shadow: 0 4px 15px rgba(16, 190, 174, 0.4);
     }
     
-    /* 内容样式 */
     .content-frame {
       height: 100%;
       width: 100%;
@@ -207,7 +204,6 @@
       display: none;
     }
     
-    /* 状态指示器 */
     .status-indicator {
       position: fixed;
       top: clamp(0.625rem, 3vw, 1.25rem);
@@ -245,7 +241,6 @@
       100% { box-shadow: 0 0 0 0 rgba(16, 190, 174, 0); }
     }
     
-    /* 预览提示 */
     .preview-hint {
       background: rgba(20, 23, 36, 0.8);
       padding: 0.9375rem 1.875rem;
@@ -266,7 +261,6 @@
       font-weight: bold;
     }
     
-    /* 信息卡片样式 */
     .info-card {
       margin: 1.5625rem 0;
       text-align: left;
@@ -307,9 +301,7 @@
       flex: 1;
     }
     
-    /* 响应式调整 */
     @media (max-width: 768px) {
-      /* 移动端优化触摸目标大小 */
       .refresh-btn {
         width: 100%;
         padding: 1rem;
@@ -325,7 +317,6 @@
         margin-bottom: 0.3125rem;
       }
       
-      /* 简化状态指示器 */
       .status-indicator {
         padding: 0.5rem 0.9375rem;
         font-size: 0.75rem;
@@ -346,14 +337,12 @@
       }
     }
     
-    /* 平板设备优化 */
     @media (min-width: 769px) and (max-width: 1024px) {
       .watermark-content {
         max-width: 80%;
       }
     }
     
-    /* 加载和过渡动画 */
     [class*="fade-"] {
       opacity: 0;
       transition: opacity 0.5s ease;
@@ -363,7 +352,6 @@
       opacity: 1;
     }
     
-    /* 确保内容在小屏幕上可滚动 */
     @supports (-webkit-overflow-scrolling: touch) {
       .watermark {
         -webkit-overflow-scrolling: touch;
@@ -372,10 +360,8 @@
   </style>
 </head>
 <body>
-  <!-- 模糊背景预览 -->
   <div class="preview-background"></div>
   
-  <!-- 授权水印（始终显示） -->
   <div class="watermark" id="watermark">
     <div class="preview-hint fade-in">
       <i class="fas fa-eye"></i> 您正在预览受保护内容，<span class="highlight">获取完整授权后可清除此提示</span>
@@ -409,7 +395,6 @@
     </div>
   </div>
   
-  <!-- 加载动画 -->
   <div class="loading-container" id="loading">
     <div class="loading-dots">
       <div class="loading-dot dot-1"></div>
@@ -419,20 +404,19 @@
     <div class="loading-text">安全验证中...</div>
   </div>
 
-  <!-- 状态指示器 -->
   <div class="status-indicator" id="statusIndicator">
     <div class="status-dot"></div>
     <span>等待验证</span>
   </div>
 
-  <!-- 内容容器 -->
   <iframe class="content-frame" id="contentFrame"></iframe>
 
   <script>
-    // 配置授权检查API地址
-    const AUTH_API_URL = 'https://sq.suheqing.cn/check.php';
+    // 配置授权检查API地址（请替换为你的实际后端地址）
+    const AUTH_API_URL = 'https://你的域名/check.php';
     
-    // 备选CORS代理服务器列表
+    // 修复：仅在后端未正确配置CORS时使用代理，否则注释掉
+    const USE_PROXY = false; // 关键修复：默认不使用代理，避免参数解析问题
     const CORS_PROXIES = [
       'https://api.allorigins.win/raw?url=',
       'https://corsproxy.io/?',
@@ -455,7 +439,6 @@
       const dot = indicator.querySelector('.status-dot');
       const text = indicator.querySelector('span');
       
-      // 添加过渡动画
       text.style.opacity = '0';
       setTimeout(() => {
         text.textContent = message;
@@ -475,69 +458,68 @@
       return urlParams.get(name);
     }
 
+    // 修复：URL安全的Base64解码（处理+/-替换问题）
+    function base64UrlDecode(str) {
+      // 替换URL安全字符为标准Base64字符
+      str = str.replace(/-/g, '+').replace(/_/g, '/');
+      // 补全Padding
+      const pad = str.length % 4;
+      if (pad) {
+        str += '='.repeat(4 - pad);
+      }
+      return atob(str);
+    }
+
     // 检查授权状态
     async function checkAuth(url) {
       updateStatus('授权验证中...');
       
-      let proxyIndex = 0;
-      let lastError = null;
+      let apiUrl = `${AUTH_API_URL}?link=${encodeURIComponent(url)}`;
       
-      // 尝试直接请求和多个代理
-      while (proxyIndex <= CORS_PROXIES.length) {
-        let apiUrl;
-        
-        if (proxyIndex === 0) {
-          // 直接请求
-          apiUrl = `${AUTH_API_URL}?link=${encodeURIComponent(url)}`;
-        } else {
-          // 通过代理请求
-          const proxy = CORS_PROXIES[proxyIndex - 1];
-          apiUrl = proxy + encodeURIComponent(`${AUTH_API_URL}?link=${encodeURIComponent(url)}`);
-        }
-        
-        try {
-          // 设置超时时间为10秒
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
-          
-          const response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json'
-            },
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (data.code === 200) {
-              updateStatus('授权验证通过', true);
-              return true;
-            } else {
-              lastError = `API返回错误: ${data.code} ${data.message || '未授权'}`;
-            }
-          } else {
-            lastError = `API响应错误: ${response.status} ${response.statusText}`;
-          }
-        } catch (error) {
-          lastError = error.name === 'AbortError' ? '请求超时' : error.message || '网络连接失败';
-        }
-        
-        proxyIndex++;
+      // 仅在需要时使用代理
+      if (USE_PROXY) {
+        apiUrl = CORS_PROXIES[0] + encodeURIComponent(apiUrl);
       }
       
-      // 所有尝试都失败
-      console.error('所有授权检查请求均失败，最后错误:', lastError);
-      updateStatus('验证失败');
-      return false;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP错误: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('授权验证结果:', data); // 调试用
+        
+        if (data.code === 200) {
+          updateStatus('授权验证通过', true);
+          return true;
+        } else {
+          // 显示具体未授权原因
+          updateError(`未授权: ${data.message || '该域名未在授权列表中'}`);
+          return false;
+        }
+      } catch (error) {
+        console.error('授权检查失败:', error);
+        updateError(`验证失败: ${error.message || '网络异常'}`);
+        return false;
+      }
     }
 
     // 更新错误信息
     function updateError(message) {
       const errorElement = document.getElementById('errorDetail');
-      // 添加过渡动画
       errorElement.style.opacity = '0';
       setTimeout(() => {
         errorElement.textContent = message;
@@ -551,7 +533,6 @@
       frame.style.display = 'block';
       frame.src = url;
       
-      // 添加淡出动画
       const watermark = document.getElementById('watermark');
       watermark.style.opacity = '0';
       watermark.style.transition = 'opacity 0.5s ease';
@@ -570,7 +551,6 @@
       frame.onerror = function() {
         document.getElementById('loading').style.display = 'none';
         updateError('内容加载失败，请检查URL');
-        // 重新显示水印
         watermark.style.display = 'flex';
         watermark.style.opacity = '1';
       };
@@ -589,10 +569,8 @@
     // 主执行函数
     async function main() {
       try {
-        // 添加淡入动画
         addFadeInAnimation();
         
-        // 生成并显示授权码
         const authCode = generateAuthCode();
         document.getElementById('authCode').textContent = authCode;
         
@@ -601,42 +579,35 @@
           throw new Error('缺少授权参数(c)');
         }
 
-        // 解码Base64 URL
+        // 修复：使用URL安全的Base64解码
         let trueUrl;
         try {
-          trueUrl = atob(encodedParam);
+          trueUrl = base64UrlDecode(encodedParam);
           if (!trueUrl.startsWith('http')) {
-            throw new Error('无效的URL格式');
+            throw new Error('URL必须以http/https开头');
           }
           
-          // 显示访问链接（缩短显示）
-          let displayUrl;
-          if (trueUrl.length > 50) {
-            displayUrl = trueUrl.substring(0, 30) + '...' + trueUrl.substring(trueUrl.length - 20);
-          } else {
-            displayUrl = trueUrl;
-          }
+          // 显示访问链接
+          let displayUrl = trueUrl.length > 50 
+            ? trueUrl.substring(0, 30) + '...' + trueUrl.substring(trueUrl.length - 20)
+            : trueUrl;
           document.getElementById('accessLink').textContent = displayUrl;
         } catch (e) {
           throw new Error('URL解码失败: ' + e.message);
         }
         
-        // 显示授权信息
         updateError('正在验证授权状态...');
         
         // 检查授权状态
         const isAuthorized = await checkAuth(trueUrl);
         
         if (isAuthorized) {
-          // 授权成功 - 加载内容
           updateError('授权验证通过！正在加载内容...');
           setTimeout(() => {
             loadContent(trueUrl);
           }, 1500);
         } else {
-          // 授权失败 - 显示错误
           document.getElementById('loading').style.display = 'none';
-          updateError('授权验证未通过，请联系QQ:3129904908获取授权');
         }
       } catch (error) {
         console.error('初始化失败:', error);
@@ -645,12 +616,9 @@
       }
     }
 
-    // 页面加载完成后启动
     window.addEventListener('DOMContentLoaded', main);
     
-    // 处理窗口大小变化
     window.addEventListener('resize', () => {
-      // 确保背景图始终覆盖整个屏幕
       const bg = document.querySelector('.preview-background');
       bg.style.height = `${window.innerHeight}px`;
       bg.style.width = `${window.innerWidth}px`;
